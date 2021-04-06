@@ -98,11 +98,27 @@ from stat import S_IRUSR, S_IWUSR
 from tempfile import gettempdir, NamedTemporaryFile
 import yaml
 
+try:
+    import backoff
+except ImportError as imp_exc:
+    BACKOFF_IMPORT_ERROR = imp_exc
+else:
+    BACKOFF_IMPORT_ERROR = None
+
 from ansible.module_utils.urls import open_url
 from ansible.utils.display import Display
 import ssl
 
 display = Display()
+
+
+@backoff.on_predicate(backoff.expo, lambda response: response.getcode() == 500, max_tries=5)
+def _repeat_open_url(url, headers=None, method=None, validate_certs=True, cert_file=None):
+    return open_url(url,
+                    headers=headers,
+                    method=method,
+                    validate_certs=validate_certs,
+                    ca_path=cert_file)
 
 
 # Load configuration and return as dictionary if file is present on file system
