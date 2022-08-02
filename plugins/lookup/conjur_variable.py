@@ -118,8 +118,7 @@ def _load_conf_from_file(conf_path):
 
     display.vvvv('Loading configuration from: {0}'.format(conf_path))
     with open(conf_path) as f:
-        config = yaml.safe_load(f.read())
-        return config
+        return yaml.safe_load(f.read())
 
 
 # Load identity and return as dictionary if file is present on file system
@@ -141,17 +140,14 @@ def _load_identity_from_file(identity_path, appliance_url):
                            .format(conjur_authn_url))
 
     id, account, api_key = identity.authenticators(conjur_authn_url)
-    if not id or not api_key:
-        return {}
-
-    return {'id': id, 'api_key': api_key}
+    return {} if not id or not api_key else {'id': id, 'api_key': api_key}
 
 
 # Merge multiple dictionaries by using dict.update mechanism
 def _merge_dictionaries(*arg):
     ret = {}
     for item in arg:
-        ret.update(item)
+        ret |= item
     return ret
 
 
@@ -252,10 +248,7 @@ def _fetch_conjur_variable(conjur_variable, token, conjur_url, account, validate
 
 
 def _default_tmp_path():
-    if os.access("/dev/shm", os.W_OK):
-        return "/dev/shm"
-
-    return gettempdir()
+    return "/dev/shm" if os.access("/dev/shm", os.W_OK) else gettempdir()
 
 
 def _store_secret_in_file(value):
@@ -351,7 +344,4 @@ class LookupModule(LookupBase):
             cert_file
         )
 
-        if as_file:
-            return _store_secret_in_file(conjur_variable)
-
-        return conjur_variable
+        return _store_secret_in_file(conjur_variable) if as_file else conjur_variable
